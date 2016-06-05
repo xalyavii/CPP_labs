@@ -41,6 +41,30 @@ public class Model {
     return height;
   }
 
+  public int getX() {
+    return x;
+  }
+
+  public int getY() {
+    return y;
+  }
+
+  public int getCourse() {
+    return course;
+  }
+
+  public void setX(int a) {
+    x = a;
+  }
+
+  public void setY(int a) {
+    y = a;
+  }
+
+  public void setCourse(int a) {
+    course = a;
+  }
+
   public void clear() {
     Arrays.fill(field, (byte) 0);
   }

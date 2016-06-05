@@ -7,13 +7,7 @@ import java.awt.Insets;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 
 import javax.swing.JPanel;
 
@@ -40,8 +34,10 @@ public class AntPan extends JPanel implements Runnable {
   //Creating of variables and files for saving
   private int saveByte = 0;
   private int readByte = 0;
+  private int replayByte = 0;
   private File saveFile;
   private File loadFile;
+  private File replayFile = new File("replay");
   private boolean endLoadFile = false;
 
   public AntPan() {
@@ -126,12 +122,114 @@ public class AntPan extends JPanel implements Runnable {
     readByte = g;
   }
 
+  public void setReplayByte(int g) {
+    replayByte = g;
+  }
+
   public void setSaveFile(File f) {
     saveFile = f;
   }
 
   public void setLoadFile(File f) {
     loadFile = f;
+  }
+
+  public void replay() {
+    String hight, widht, tempCellSize;
+    byte[] tempField;
+
+    try {
+      BufferedReader in = new BufferedReader(new FileReader(replayFile.getAbsoluteFile()));
+      try {
+        char s[];
+        String s1;
+
+        while (true) {
+          try {
+            Thread.sleep(updateDelay);
+          } catch (InterruptedException e) {
+          }
+
+          if (in.readLine() == null) break;
+
+          widht = in.readLine();
+          hight = in.readLine();
+          tempCellSize = in.readLine();
+          ant.setX(Integer.parseInt(in.readLine()));
+          ant.setY(Integer.parseInt(in.readLine()));
+          ant.setCourse(Integer.parseInt(in.readLine()));
+          tempField = new byte[Integer.parseInt(widht) * Integer.parseInt(hight)];
+          int k = 0;
+
+          for (int i = 0; i < Integer.parseInt(hight); i++) {
+            s1 = in.readLine();
+            s = s1.toCharArray();
+            for (int g = 0; g < Integer.parseInt(widht); g++) {
+              if (s[g] == '1') {
+                tempField[k] = 1;
+              } else {
+                tempField[k] = 0;
+              }
+              k++;
+            }
+          }
+          initialize(Integer.parseInt(widht), Integer.parseInt(hight));
+          setCellSize(Integer.parseInt(tempCellSize));
+          getAntModel().setField(tempField);
+          repaint();
+        }
+
+
+      } finally {
+        //closing of output stream
+        in.close();
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    setReplayByte(0);
+    endLoadFile = true;
+    try {
+      FileWriter fstream = new FileWriter(replayFile);// конструктор с одним параметром - для перезаписи
+      BufferedWriter out = new BufferedWriter(fstream); //  создаём буферезированный поток
+      out.write(""); // очищаем, перезаписав поверх пустую строку
+      out.close(); // закрываем
+    } catch (Exception e)
+    {System.err.println("Error in file cleaning: " + e.getMessage());}
+  }
+
+  public void saveForReplay() {
+    byte[] tempField = ant.getField(); //Returns an array of current time
+
+    //The existence check
+    try {
+      if (!replayFile.exists()) {
+        replayFile.createNewFile();
+      }
+
+      PrintWriter out = new PrintWriter(new OutputStreamWriter
+          (new FileOutputStream(replayFile.getAbsolutePath(), true), "UTF-8"));
+      try { //write data to file
+        out.println(replayFile.getName());
+        out.println(Integer.toString(ant.getWidth()));
+        out.println(Integer.toString(ant.getHeight()));
+        out.println(Integer.toString(cellSize));
+        out.println(Integer.toString(ant.getX()));
+        out.println(Integer.toString(ant.getY()));
+        out.println(Integer.toString(ant.getCourse()));
+
+        for (int i = 0; i < ant.getHeight(); i++) {
+          for (int g = 0; g < (ant.getWidth()); g++) {
+            out.print(tempField[i * ant.getWidth() + g]);
+          }
+          out.println();
+        }
+      } finally {
+        out.close();
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   //Setting the cell size
@@ -181,6 +279,9 @@ public class AntPan extends JPanel implements Runnable {
           out.println(Integer.toString(ant.getWidth()));
           out.println(Integer.toString(ant.getHeight()));
           out.println(Integer.toString(cellSize));
+          out.println(Integer.toString(ant.getX()));
+          out.println(Integer.toString(ant.getY()));
+          out.println(Integer.toString(ant.getCourse()));
           for (int i = 0; i < ant.getHeight(); i++) {
             for (int g = 0; g < (ant.getWidth()); g++) {
               out.print(tempField[i * ant.getWidth() + g]);
@@ -219,6 +320,9 @@ public class AntPan extends JPanel implements Runnable {
           widht = in.readLine();
           hight = in.readLine();
           tempCellSize = in.readLine();
+          ant.setX(Integer.parseInt(in.readLine()));
+          ant.setY(Integer.parseInt(in.readLine()));
+          ant.setCourse(Integer.parseInt(in.readLine()));
           tempField = new byte[Integer.parseInt(widht) * Integer.parseInt(hight)];
           int k = 0;
 
@@ -256,6 +360,7 @@ public class AntPan extends JPanel implements Runnable {
   @Override
   public void run() {
     repaint();
+
     while (simThread != null) {
       try {
         Thread.sleep(updateDelay);
@@ -267,11 +372,15 @@ public class AntPan extends JPanel implements Runnable {
       * which is changing now
       * */
       synchronized (ant) {
+        if (replayByte == 1){
+          replay();
+          repaint();
+        }
         if (readByte == 0) {
           if (saveByte == 1) {
             saveToFile();
           }
-
+          saveForReplay();
           ant.simulate();
         } else {
           simulateFromFile();

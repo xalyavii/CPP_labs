@@ -24,6 +24,7 @@ public class Simulate extends JFrame {
   private JMenuItem randItem = new JMenuItem("Random");
   private JMenuItem saveItem = new JMenuItem("Save as");
   private JMenuItem loadItem = new JMenuItem("Load");
+  private JMenuItem replayItem = new JMenuItem("Replay");
 
 
   private JMenuItem defStyle = new JMenuItem("Standard");
@@ -71,6 +72,7 @@ public class Simulate extends JFrame {
     menuFile.addSeparator();
     menuFile.add(saveItem);
     menuFile.add(loadItem);
+    menuFile.add(replayItem);
     menuFile.addSeparator();
     menuFile.add(exitItem);
 
@@ -197,6 +199,19 @@ public class Simulate extends JFrame {
         }
       }
     });
+    //menu item "Игра"-> "Replay"
+    replayItem.addActionListener(new ActionListener()
+    {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+       // try {
+          openReplay();
+        //} catch (IOException e1) {
+        //  e1.printStackTrace();
+        //}
+      }
+    });
+
     //menu item "Игра"-> "Выход"
     exitItem.addActionListener(new ActionListener() {
       @Override
@@ -343,6 +358,10 @@ public class Simulate extends JFrame {
     antPane.setLoadByte(1);
   }
 
+  public void openReplay() {
+    antPane.setReplayByte(1);
+  }
+
   public void saveWindowFrame() {
     JFileChooser dialog2 = new JFileChooser();
     dialog2.showSaveDialog(this);
@@ -412,15 +431,15 @@ public class Simulate extends JFrame {
   public static void main(String[] args) {
 
     System.out.println("Start");
+
     try {
       UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
     } catch (Exception e) {
+      System.out.println("Ups...");
     }
 
     SwingUtilities.invokeLater(new Runnable() {
-      public void run() {
-        new Simulate("Ant");
-      }
+      public void run() { new Simulate("Ant");}
     });
   }
 }
